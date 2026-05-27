@@ -31,27 +31,25 @@ from pydantic import BaseModel, Field
 BASE = Path(__file__).resolve().parent          # .../pi/web
 PROJECT = BASE.parent                            # .../pi
 STATIC = BASE / "static"
-ENGINE = PROJECT / "engine" / "pi.py"
+SOURCE_FILE = BASE / "worker.py"                 # the live streamer shown in the UI
 
 # Shared data (worker + web). Configurable for container/volume deployment.
 DATA_DIR = Path(os.environ.get("DATA_DIR", BASE / "_data"))
 STATUS_FILE = Path(os.environ.get("STATUS_FILE", DATA_DIR / "status.json"))
-DATASET_FILE = Path(os.environ.get("DATASET_FILE", DATA_DIR / "pi_latest.txt"))
-REFERENCE_FILE = Path(os.environ.get("REFERENCE_FILE", DATA_DIR / "reference" / "pi_ref.txt"))
+DATASET_FILE = Path(os.environ.get("DATASET_FILE", DATA_DIR / "pi_current.txt"))
 LEADERBOARD_FILE = Path(os.environ.get("LEADERBOARD_FILE", DATA_DIR / "leaderboard.json"))
 LOCAL_FALLBACK = PROJECT / "pi_100m.txt"         # optional local dataset for dev
 
-REPO_URL = os.environ.get("REPO_URL", "https://github.com/makerLab314/pi")
-# The fixed amount of digits every browser computes for the benchmark, so the
-# numbers are comparable across machines.
-BENCH_DIGITS = int(os.environ.get("BENCH_DIGITS", "100000"))
+REPO_URL = os.environ.get("REPO_URL", "https://github.com/ProfessorEngineergit/pi")
+# Digits every browser computes for the benchmark, so results are comparable.
+BENCH_DIGITS = int(os.environ.get("BENCH_DIGITS", "15000"))
 
 _lock = threading.Lock()
 
 
 def dataset_path():
     """The pi file the site shows: the worker's latest, else local, else reference."""
-    for p in (DATASET_FILE, LOCAL_FALLBACK, REFERENCE_FILE):
+    for p in (DATASET_FILE, LOCAL_FALLBACK):
         if p.exists():
             return p
     return None
@@ -88,15 +86,6 @@ LOGICAL_CORES = os.cpu_count() or 1
 CORES = int(os.environ.get("WORKERS", "0") or 0) or LOGICAL_CORES
 
 
-def _gmp_versions():
-    try:
-        import gmpy2
-        return {"gmpy2": gmpy2.version(), "gmp": gmpy2.mp_version(),
-                "mpfr": gmpy2.mpfr_version()}
-    except Exception:
-        return {}
-
-
 def total_digits() -> int:
     p = dataset_path()
     return max(0, p.stat().st_size - frac_offset(p)) if p else 0
@@ -112,8 +101,10 @@ def status():
             return JSONResponse(json.loads(STATUS_FILE.read_text()))
         except (OSError, ValueError):
             pass
-    return {"state": "offline", "current_target": None, "highest_verified": 0,
-            "history": [], "dataset_digits": total_digits()}
+    return {"state": "offline", "mode": "spigot", "iteration": 0,
+            "current_digit": 0, "reset_limit": 0, "blocks_verified": 0,
+            "status_text": "Streamer gerade offline", "recent": "",
+            "dataset_digits": total_digits()}
 
 
 @app.get("/api/meta")
@@ -128,7 +119,7 @@ def meta():
         "cores": CORES,
         "logical_cores": LOGICAL_CORES,
         "bench_digits": BENCH_DIGITS,
-        "gmp": _gmp_versions(),
+        "pi_delivery": "https://pi.delivery",
     }
 
 
@@ -177,9 +168,9 @@ def search(q: str = Query(..., min_length=1, max_length=64)):
 
 @app.get("/api/source")
 def source():
-    if not ENGINE.exists():
+    if not SOURCE_FILE.exists():
         return JSONResponse({"error": "source not found"}, status_code=404)
-    return PlainTextResponse(ENGINE.read_text(), media_type="text/plain")
+    return PlainTextResponse(SOURCE_FILE.read_text(), media_type="text/plain")
 
 
 # ───────────────────────── benchmark leaderboard ─────────────────────────

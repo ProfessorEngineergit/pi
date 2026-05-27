@@ -375,3 +375,14 @@ em { color: var(--gold); font-style: normal; }
 .lb-row.me { background: linear-gradient(90deg, rgba(0,240,255,.12), rgba(139,92,246,.10)); border: 1px solid rgba(0,240,255,.4); }
 .lb-row.me .lb-name { color: var(--cyan); }
 .code-file { font-family: var(--mono); color: var(--muted); font-size: .9rem; }
+
+/* live ticker: streaming digits + status box */
+.st-stream {
+  font-family: var(--mono); font-size: 1.05rem; line-height: 1.6; letter-spacing: 1px;
+  background: rgba(0,0,0,.28); border: 1px solid var(--glass-brd); border-radius: 12px;
+  padding: .9rem 1rem; min-height: 86px; word-break: break-all; overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 100%);
+}
+.st-stream span { transition: opacity .3s; }
+.st-textbox { color: var(--text); font-size: .95rem; min-height: 2.6em; }
+.bench-note { font-size: .92rem; opacity: .85; margin-top: .8rem; }

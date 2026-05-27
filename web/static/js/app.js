@@ -33,6 +33,11 @@ function clientId() {
   } catch { return ''; }
 }
 
+const fmtMs = (s) => {
+  const ms = s * 1000;
+  if (ms < 1000) return Math.round(ms) + ' ms';
+  return (ms / 1000).toFixed(2).replace('.', ',') + ' s';
+};
 const fmtDur = (s) => {
   s = Math.max(0, s);
   if (s < 10) return s.toFixed(2).replace('.', ',') + 's';
@@ -65,21 +70,13 @@ async function boot() {
 
 /* ───────── meta / links ───────── */
 function setupMeta() {
-  const repo = META.repo || 'https://github.com/makerLab314/pi';
+  const repo = META.repo || 'https://github.com/ProfessorEngineergit/pi';
   $('#github-btn').href = repo;
-  $('#code-github').href = repo + '/blob/main/engine/pi.py';
+  $('#code-github').href = repo + '/blob/main/web/worker.py';
   const fg = $('#footer-github'); fg.href = repo; fg.textContent = repo.replace('https://', '');
-  if (META.total_digits) {
-    $$('.hstat-num')[0]?.setAttribute('data-count', META.total_digits);
-  }
-  if (META.cores) $$('.hstat-num')[1]?.setAttribute('data-count', META.cores);
   if (META.cpu) $('#st-cpu').textContent = shortCpu(META.cpu);
-  if (META.bench_digits) {
-    $('#bench-digits').textContent = nf.format(META.bench_digits);
-  }
-  const g = META.gmp || {};
-  const fgmp = [g.gmpy2 && `gmpy2 ${g.gmpy2}`, g.gmp].filter(Boolean).join(' · ');
-  if (fgmp) $('#footer-gmp').textContent = fgmp;
+  if (META.bench_digits) $('#bench-digits').textContent = nf.format(META.bench_digits);
+  $('#footer-gmp').textContent = 'Spigot · pi.delivery';
 }
 function shortCpu(s) {
   return String(s).replace(/\(R\)|\(TM\)|CPU|Processor/gi, '').replace(/\s+/g, ' ').trim().slice(0, 22);
@@ -104,69 +101,48 @@ function setupCounters() {
   $$('.hstat-num[data-count]').forEach(el => io.observe(el));
 }
 
-/* ───────── live status ───────── */
-const STATUS_PHASES = [['bs', 'Reihe'], ['merge', 'Merge'], ['sqrt', 'Wurzel'], ['div', 'Division'], ['str', 'Konvert.']];
+/* ───────── live status (spigot ticker) ───────── */
 const STATE_LABEL = {
-  starting: 'startet…', computing: 'rechnet gerade', verifying: 'prüft die Stellen',
-  idle: 'gleich die nächste Stufe', finished: 'fertig', error: 'Fehler', offline: 'gerade offline',
+  starting: 'startet…', streaming: 'rechnet Ziffern', resetting: 'Runde fertig, fängt neu an',
+  error: 'Fehler', offline: 'gerade offline',
 };
-function setupStatus() {
-  const phasesWrap = $('#st-phases');
-  phasesWrap.innerHTML = STATUS_PHASES.map(([k, n]) =>
-    `<div class="spipe" data-k="${k}"><div class="spipe-name">${n}</div><div class="spipe-t" data-t>·</div></div>`).join('');
-  let last = null;
+const STATE_CLASS = { resetting: 'idle', error: 'error', offline: 'offline' };
 
+function setupStatus() {
   function render(s) {
-    last = s;
     const state = s.state || 'offline';
     const stateEl = $('#st-state'), wrap = stateEl.closest('.status-state');
     stateEl.textContent = STATE_LABEL[state] || state;
-    wrap.className = 'status-state ' + (['idle', 'finished', 'error', 'offline'].includes(state) ? state : '');
+    wrap.className = 'status-state ' + (STATE_CLASS[state] || '');
 
-    const computing = state === 'computing' || state === 'verifying';
-    const target = computing ? s.current_target : (s.highest_verified || s.current_target);
-    $('#st-target').textContent = target ? nf.format(target) : '—';
-    $('.status-target .st-sub').textContent = computing ? 'Stellen gerade in Arbeit'
-      : (s.highest_verified ? 'Stellen geprüft' : 'Stellen');
-
-    const times = s.phase_times || {};
-    let done = 0;
-    STATUS_PHASES.forEach(([k]) => {
-      const el = phasesWrap.querySelector(`.spipe[data-k="${k}"]`);
-      const t = times[k];
-      el.classList.toggle('done', t != null);
-      el.classList.toggle('active', computing && s.phase === k);
-      el.querySelector('[data-t]').textContent = t != null ? t.toFixed(2) + 's' : '·';
-      if (t != null) done++;
-    });
-
-    let frac = (state === 'idle' || state === 'finished') ? 1
-      : (s.phase === 'bs' && s.chunks_total) ? (s.chunks_done / s.chunks_total) / 5 : done / 5;
+    const cur = s.current_digit || 0, lim = s.reset_limit || 0;
+    $('#st-iter').textContent = 'Runde ' + nf.format(s.iteration || 1);
+    $('#st-digit').textContent = nf.format(cur);
+    const frac = lim ? cur / lim : 0;
     $('#st-bar').style.width = Math.min(100, Math.max(0, frac * 100)) + '%';
-    $('#st-progress-label').textContent = computing ? `${s.phase_label || 'läuft'} · ${Math.round(frac * 100)}%` : '';
-    $('#st-chunks').textContent = s.chunks_total ? `${s.chunks_done}/${s.chunks_total}` : '—';
+    $('#st-progress-label').textContent = lim
+      ? `${Math.round(frac * 100)}% dieser Runde (bis ${nf.format(lim)} Stellen)` : '';
 
-    const rec = s.last_record;
-    $('#st-record').textContent = s.highest_verified ? nf.format(s.highest_verified) : '—';
-    $('#st-record-sub').textContent = rec
-      ? `in ${fmtDur(rec.seconds)} · ${rec.verified === true ? 'geprüft ✓' : rec.verified === false ? 'Abweichung!' : 'ungeprüft'}`
-      : 'noch keine Stufe fertig';
-    $('#st-ref').textContent = (s.reference_digits || 0) > 0 ? nf.format(s.reference_digits) + ' Stellen geladen' : 'noch keine geladen';
+    const rec = s.recent || '';
+    $('#st-stream').innerHTML = [...rec].map(c =>
+      /\d/.test(c) ? `<span style="color:${HEX[+c]}">${c}</span>` : c).join('');
 
-    const hist = (s.history || []).slice().reverse().slice(0, 12);
-    $('#st-history').innerHTML = hist.length ? hist.map(h =>
-      `<div class="hist-row"><span>${nf.format(h.digits)}</span><span>${fmtDur(h.seconds)}</span>
-        <span class="${h.verified === true ? 'ok' : 'pending'}">${h.verified === true ? '✓' : '○'}</span></div>`).join('')
-      : '<span class="st-sub">—</span>';
-  }
-  function tickElapsed() {
-    if (!last) return;
-    if ((last.state === 'computing' || last.state === 'verifying') && last.started_at)
-      $('#st-elapsed').textContent = fmtDur((Date.now() - Date.parse(last.started_at)) / 1000);
-    else if (last.last_record) $('#st-elapsed').textContent = fmtDur(last.last_record.seconds);
+    $('#st-rate').textContent = s.rate_dps ? nf.format(s.rate_dps) : '—';
+    $('#st-blocks').textContent = s.blocks_verified != null ? nf.format(s.blocks_verified) : '—';
+    $('#st-text').textContent = s.status_text || '…';
+
+    const v = s.verify_ok;
+    $('#st-verify').innerHTML = v === true
+      ? 'letzter Block <span style="color:#3ce6a0">✓ von pi.delivery bestätigt</span>'
+      : v === false ? '<span style="color:var(--magenta)">Abweichung entdeckt!</span>'
+      : 'Abgleich mit pi.delivery (gerade keine Antwort)';
+    $('#st-round').textContent = lim ? `${nf.format(cur)} von ${nf.format(lim)} Stellen` : '—';
+
+    $('#hero-digit').textContent = nf.format(cur);
+    $('#hero-iter').textContent = nf.format(s.iteration || 1);
   }
   const poll = async () => { try { render(await getJSON('/api/status')); } catch {} };
-  poll(); setInterval(poll, 1500); setInterval(tickElapsed, 1000);
+  poll(); setInterval(poll, 1200);
 }
 
 /* ───────── benchmark + leaderboard ───────── */
@@ -216,7 +192,7 @@ async function loadLeaderboard(myName) {
       return `<div class="lb-row${me}"><span class="lb-rank">${e.rank}</span>
         <span class="lb-name">${escapeHtml(e.username)}</span>
         <span class="lb-mach">${escapeHtml(mach)}</span>
-        <span class="lb-time">${fmtDur(e.seconds)}</span></div>`;
+        <span class="lb-time">${fmtMs(e.seconds)}</span></div>`;
     }).join('');
 }
 function escapeHtml(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
@@ -257,7 +233,7 @@ function setupBenchmark() {
         setActive(PHASES[PHASES.findIndex(p => p[0] === m.name) + 1]?.[0]);
       } else if (m.type === 'done') {
         setActive(null);
-        $('#bench-time').textContent = fmtDur(m.total_seconds);
+        $('#bench-time').textContent = fmtMs(m.total_seconds);
         $('#bench-score').textContent = nf.format(Math.round(digits / m.total_seconds));
         btn.disabled = false; btn.textContent = '▶ nochmal';
         worker.terminate(); worker = null;
@@ -267,7 +243,7 @@ function setupBenchmark() {
             body: JSON.stringify({ username, cid: clientId(), seconds: m.total_seconds, digits, specs }),
           });
           if (res.rank) $('#bench-rank').textContent = '#' + res.rank;
-          toast(`${fmtDur(m.total_seconds)} — Platz #${res.rank} von ${res.total}`);
+          toast(`${fmtMs(m.total_seconds)}, Platz #${res.rank} von ${res.total}`);
           loadLeaderboard(res.you?.username || username);
         } catch { toast('Ergebnis konnte nicht gesendet werden'); }
       } else if (m.type === 'error') {

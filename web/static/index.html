@@ -60,8 +60,8 @@
       <a href="#benchmark" class="btn btn-ghost">Wie schnell ist dein Rechner?</a>
     </div>
     <div class="hero-stats" id="hero-stats">
-      <div class="hstat"><span class="hstat-num" data-count="0">0</span><span class="hstat-label">Stellen verifiziert</span></div>
-      <div class="hstat"><span class="hstat-num" data-count="0">0</span><span class="hstat-label">CPU-Kerne im Einsatz</span></div>
+      <div class="hstat"><span class="hstat-num" id="hero-digit">0</span><span class="hstat-label">Stellen in dieser Runde</span></div>
+      <div class="hstat"><span class="hstat-num" id="hero-iter">1</span><span class="hstat-label">aktuelle Runde</span></div>
       <div class="hstat"><span class="hstat-num hstat-static">∞</span><span class="hstat-label">und es geht weiter</span></div>
     </div>
   </div>
@@ -73,35 +73,34 @@
   <div class="section-head">
     <span class="kicker"><span class="live-dot"></span> Live</span>
     <h2>Wo steht er gerade?</h2>
-    <p class="lead">Der Server nimmt sich eine Stufe nach der anderen vor, immer mehr Stellen.
-      Du siehst, an welcher er gerade sitzt, wie weit er damit ist und welchen geprüften
-      Rekord er schon geschafft hat.</p>
+    <p class="lead">Der Server rechnet π Ziffer für Ziffer aus und prüft jeden Block von 1000
+      Stellen sofort gegen die offizielle pi.delivery-Datenbank. Nach einer Runde fängt er
+      wieder bei 0 an und zählt die Runde hoch. Du schaust live zu.</p>
   </div>
 
   <div class="status-grid">
     <div class="card glass status-main">
-      <div class="status-state"><span class="pulse" id="st-pulse"></span><span id="st-state">verbinde…</span></div>
-      <div class="status-target"><span class="st-big" id="st-target">—</span><span class="st-sub">Stellen gerade in Arbeit</span></div>
-      <div class="status-phases" id="st-phases"></div>
+      <div class="status-state"><span class="pulse" id="st-pulse"></span><span id="st-state">verbinde…</span> · <span id="st-iter">Runde 1</span></div>
+      <div class="status-target"><span class="st-big" id="st-digit">0</span><span class="st-sub">aktuelle Nachkommastelle</span></div>
       <div class="status-progress">
         <div class="status-bar"><div class="status-bar-fill" id="st-bar"></div></div>
         <span id="st-progress-label" class="st-sub"></span>
       </div>
+      <div class="st-stream" id="st-stream"></div>
       <div class="status-metrics">
-        <div><span class="sm-num" id="st-elapsed">—</span><span class="sm-label">läuft seit</span></div>
-        <div><span class="sm-num" id="st-chunks">—</span><span class="sm-label">Päckchen fertig</span></div>
-        <div><span class="sm-num" id="st-cpu">—</span><span class="sm-label">rechnet auf</span></div>
+        <div><span class="sm-num" id="st-rate">—</span><span class="sm-label">Stellen/Sek.</span></div>
+        <div><span class="sm-num" id="st-blocks">—</span><span class="sm-label">Blöcke geprüft</span></div>
+        <div><span class="sm-num" id="st-cpu">—</span><span class="sm-label">läuft auf</span></div>
       </div>
     </div>
 
     <div class="card glass status-side">
-      <h3>Geprüfter Rekord</h3>
-      <div class="record-num" id="st-record">—</div>
-      <div class="record-sub st-sub" id="st-record-sub">noch keine Stufe fertig</div>
-      <h3 class="side-h">Referenz zum Abgleich</h3>
-      <div id="st-ref" class="st-ref">—</div>
-      <h3 class="side-h">Zuletzt geschafft</h3>
-      <div id="st-history" class="history"><span class="st-sub">—</span></div>
+      <h3>Was gerade passiert</h3>
+      <div id="st-text" class="st-textbox">…</div>
+      <h3 class="side-h">Verifikation</h3>
+      <div id="st-verify" class="st-ref">…</div>
+      <h3 class="side-h">Diese Runde</h3>
+      <div id="st-round" class="st-ref">…</div>
     </div>
   </div>
 </section>
@@ -122,34 +121,34 @@
         die nie langweilig wird und nie fertig ist.</p>
     </div>
     <div class="card glass explain-card">
-      <div class="ex-num">02</div><h3>Die Chudnovsky-Reihe</h3>
-      <p>Es gibt viele Formeln für π. Wir nehmen die schnellste bekannte: Jeder
-        Rechenschritt liefert gleich rund <strong>14 neue Stellen</strong>. Für eine Million
-        Stellen reichen so etwa 70.000 Schritte statt Millionen.</p>
+      <div class="ex-num">02</div><h3>Der Spigot-Trick</h3>
+      <p>Statt riesige Zahlen im Speicher zu halten, spuckt ein Spigot-Algorithmus die
+        Ziffern einzeln aus und wirft jede alte gleich wieder weg. Dadurch braucht er fast
+        keinen Arbeitsspeicher und läuft sogar auf einem kleinen Raspberry Pi.</p>
     </div>
     <div class="card glass explain-card">
-      <div class="ex-num">03</div><h3>Binary Splitting</h3>
-      <p>Die Reihe stur von vorne nach hinten zu summieren wäre langsam. Stattdessen
-        kombinieren wir die Brüche paarweise zu einem ausgewogenen Baum. So bleiben die
-        riesigen Zahlen-Multiplikationen handlich und schnell.</p>
+      <div class="ex-num">03</div><h3>Sofort gegengeprüft</h3>
+      <p>Jeder fertige Block von 1000 Stellen wird live mit der offiziellen Datenbank von
+        pi.delivery (Google) abgeglichen. Stimmt etwas nicht, steht es sofort im Status.
+        So weißt du: Was hier steht, ist echtes π.</p>
     </div>
     <div class="card glass explain-card">
-      <div class="ex-num">04</div><h3>Alle Kerne gleichzeitig</h3>
-      <p>Der Baum wird in Päckchen zerlegt, und jeder CPU-Kern bekommt seins. Auch das
-        Zusammenführen und die Umwandlung ins Dezimalsystem laufen parallel. Aus „ein Kern
-        rechnet" wird „die ganze Maschine rechnet".</p>
+      <div class="ex-num">04</div><h3>Immer im Kreis</h3>
+      <p>Damit der kleine Server nicht an Billionen Stellen erstickt, hört er nach einer
+        festen Zahl auf, springt zurück auf die erste Stelle und legt wieder los. Ein Zähler
+        merkt sich, in welcher Runde er gerade ist.</p>
     </div>
     <div class="card glass explain-card">
-      <div class="ex-num">05</div><h3>Woher wir wissen, dass es stimmt</h3>
-      <p>Jede fertige Stufe wird Ziffer für Ziffer mit einer offiziellen Referenz
-        verglichen, die der Server selbst aus dem Internet lädt und per Prüfsumme
-        absichert. Erst wenn alles passt, zählt eine Stufe als Rekord.</p>
+      <div class="ex-num">05</div><h3>Wo das Ganze läuft</h3>
+      <p>Auf einem ganz normalen Heimserver, erreichbar über die lokale IP und nach außen
+        sauber abgesichert durch einen Cloudflare-Tunnel. Kein Rechenzentrum, kein großes
+        Gerät, einfach eine Kiste, die durchläuft.</p>
     </div>
     <div class="card glass explain-card">
-      <div class="ex-num">06</div><h3>Der Benchmark</h3>
-      <p>Denselben Rechenkern gibt's auch für dich: Dein Browser berechnet eine feste
-        Menge Stellen, wir stoppen die Zeit und setzen dich in die Rangliste. Gerechnet
-        wird dabei bei <em>dir</em>, nie auf dem Server.</p>
+      <div class="ex-num">06</div><h3>Dein Benchmark</h3>
+      <p>Dein Browser rechnet 15.000 Stellen direkt auf deinem Gerät und stoppt die Zeit auf
+        die Millisekunde. Das misst die rohe Single-Core-Leistung deines Prozessors. Je
+        schneller, desto stärker das Gerät. Gerechnet wird bei <em>dir</em>, nie am Server.</p>
     </div>
   </div>
 </section>
@@ -159,9 +158,12 @@
   <div class="section-head">
     <span class="kicker">Benchmark</span>
     <h2>Wie schnell ist dein Rechner?</h2>
-    <p class="lead">Dein Browser rechnet <strong id="bench-digits">100.000</strong> Stellen
-      von π aus, direkt auf deinem Gerät. Auf dem Server läuft dabei nichts. Trag einen Namen
-      ein und schau, wo du gegen die anderen landest.</p>
+    <p class="lead">Dein Browser rechnet <strong id="bench-digits">15.000</strong> Stellen
+      von π aus, direkt auf deinem Gerät, und stoppt die Zeit auf die Millisekunde. Trag einen
+      Namen ein und schau, wo du gegen die anderen landest.</p>
+    <p class="lead bench-note">Im Hintergrund macht das die Mathe-Engine deines Browsers
+      (V8 bei Chrome, JavaScriptCore bei Safari). Gemessen wird damit die reine
+      Single-Core-Rohleistung deines Prozessors. Je schneller die Zeit, desto stärker das Gerät.</p>
   </div>
 
   <div class="bench-grid2">
@@ -261,13 +263,13 @@
   <div class="section-head">
     <span class="kicker">Offen einsehbar</span>
     <h2>Der ganze Rechenkern</h2>
-    <p class="lead">Kein Geheimnis. Das ist die komplette Engine, die hier rund um die Uhr
-      läuft, parallel über alle Kerne, jede Ziffer gegen eine Referenz geprüft.</p>
+    <p class="lead">Kein Geheimnis. Das ist der komplette Streamer, der hier rund um die Uhr
+      läuft, Ziffer für Ziffer rechnet und jeden Block gegen pi.delivery prüft.</p>
   </div>
 
   <div class="card glass code-card">
     <div class="code-toolbar">
-      <span class="code-file">engine/pi.py</span>
+      <span class="code-file">web/worker.py</span>
       <div class="code-actions">
         <a id="code-github" class="btn btn-ghost btn-sm" href="#" target="_blank" rel="noopener">auf GitHub</a>
         <button id="copy-code" class="btn btn-primary btn-sm">Code kopieren</button>

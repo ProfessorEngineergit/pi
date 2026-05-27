@@ -14,6 +14,8 @@ services:
       HOST: "0.0.0.0"
       PORT: "8000"
       DATA_DIR: "/data"
+      REPO_URL: "https://github.com/ProfessorEngineergit/pi"
+      BENCH_DIGITS: "15000"
     ports:
       - "8000:8000"
     volumes:
@@ -29,18 +31,11 @@ services:
     command: ["python", "/app/web/worker.py"]
     environment:
       DATA_DIR: "/data"
-      START_DIGITS: "1000000"     # first milestone
-      MAX_DIGITS: "0"             # 0 = compute forever
-      WORKERS: "0"                # 0 = use all cores; set e.g. "16" to pin
-      CHUNKS_PER_WORKER: "4"
-      VERIFY: "1"
-      REFERENCE_FILE: "/data/reference/pi_ref.txt"
-      # For verifying beyond 1e9, provide a segmented source, e.g.:
-      # PI_REF_SEGMENT_TEMPLATE: "https://your-host/pi_{start}_{end}.txt"
+      RESET_LIMIT: "100000"       # digits per round, then back to 0 (small = Pi-friendly)
+      BLOCK: "1000"               # verify chunk size (pi.delivery max is 1000)
+      VERIFY: "1"                 # check each block against pi.delivery
     volumes:
       - pidata:/data
-    # For max throughput give the container all cores (no cpus limit) and
-    # plenty of RAM. On Proxmox: CPU type "host", ballooning off, fast NVMe.
 
 volumes:
   pidata:
