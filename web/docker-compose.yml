@@ -31,7 +31,7 @@ services:
     command: ["python", "/app/web/worker.py"]
     environment:
       DATA_DIR: "/data"
-      RESET_LIMIT: "100000"       # digits per round, then back to 0 (small = Pi-friendly)
+      RESET_LIMIT: "20000000000"  # ~20 GB of digits per round, then back to 0 (effectively endless)
       BLOCK: "1000"               # verify chunk size (pi.delivery max is 1000)
       VERIFY: "1"                 # check each block against pi.delivery
     volumes:

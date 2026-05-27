@@ -66,19 +66,31 @@ def frac_offset(path: Path) -> int:
 
 
 def _detect_cpu():
+    # x86 exposes "model name"; ARM (Raspberry Pi) has no such line, so fall back
+    # to the board "Model" / "Hardware" fields instead.
     try:
+        fields = {}
         with open("/proc/cpuinfo") as f:
             for line in f:
-                if line.lower().startswith("model name"):
-                    return line.split(":", 1)[1].strip()
+                if ":" not in line:
+                    continue
+                key, val = line.split(":", 1)
+                fields.setdefault(key.strip().lower(), val.strip())
+        for key in ("model name", "model", "hardware", "processor"):
+            val = fields.get(key)
+            if val and not val.isdigit():
+                return val
     except OSError:
         pass
     try:
-        return subprocess.check_output(
+        out = subprocess.check_output(
             ["sysctl", "-n", "machdep.cpu.brand_string"],
-            stderr=subprocess.DEVNULL).decode().strip() or "CPU"
+            stderr=subprocess.DEVNULL).decode().strip()
+        if out:
+            return out
     except Exception:
-        return "CPU"
+        pass
+    return "Unbekannte CPU"
 
 
 CPU_BRAND = _detect_cpu()

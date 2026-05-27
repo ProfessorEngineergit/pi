@@ -32,7 +32,7 @@ DATA_DIR = Path(os.environ.get("DATA_DIR", HERE / "_data"))
 STATUS_FILE = Path(os.environ.get("STATUS_FILE", DATA_DIR / "status.json"))
 DATASET_FILE = Path(os.environ.get("DATASET_FILE", DATA_DIR / "pi_current.txt"))
 
-RESET_LIMIT = int(os.environ.get("RESET_LIMIT", "100000"))   # digits per round
+RESET_LIMIT = int(os.environ.get("RESET_LIMIT", "20000000000"))  # ~20 GB of digits per round
 BLOCK = int(os.environ.get("BLOCK", "1000"))                 # verify chunk size
 VERIFY = os.environ.get("VERIFY", "1") not in ("0", "false", "False", "")
 PI_DELIVERY = os.environ.get("PI_DELIVERY", "https://api.pi.delivery/v1/pi")
