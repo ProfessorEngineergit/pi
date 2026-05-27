@@ -5,7 +5,7 @@
 const C3_OVER_24 = 640320n ** 3n / 24n;
 const A = 13591409n;
 const B = 545140134n;
-const HARD_CAP = 200000;          // safety cap for the in-browser demo
+const HARD_CAP = 300000;          // safety cap for the in-browser demo
 
 function isqrt(n) {
   if (n < 2n) return n < 0n ? 0n : n;

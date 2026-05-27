@@ -15,7 +15,7 @@ services:
       PORT: "8000"
       DATA_DIR: "/data"
       REPO_URL: "https://github.com/ProfessorEngineergit/pi"
-      BENCH_DIGITS: "15000"
+      BENCH_DIGITS: "250000"
     ports:
       - "8000:8000"
     volumes:
