@@ -247,12 +247,20 @@ function setupBenchmark() {
           loadLeaderboard(res.you?.username || username);
         } catch { toast('Ergebnis konnte nicht gesendet werden'); }
       } else if (m.type === 'error') {
+        setActive(null);
         $('#bench-time').textContent = 'Fehler';
         btn.disabled = false; btn.textContent = '▶ Benchmark starten';
+        toast('Benchmark-Fehler: ' + (m.message || 'unbekannt'));
         worker.terminate(); worker = null;
       }
     };
-    worker.onerror = () => { btn.disabled = false; btn.textContent = '▶ Benchmark starten'; if (worker) worker.terminate(); };
+    worker.onerror = (e) => {
+      setActive(null);
+      $('#bench-time').textContent = 'Fehler';
+      btn.disabled = false; btn.textContent = '▶ Benchmark starten';
+      toast('Benchmark abgebrochen: ' + (e.message || 'der Browser hat die Berechnung gestoppt'));
+      if (worker) worker.terminate(); worker = null;
+    };
     worker.postMessage({ digits });
   });
 
@@ -298,6 +306,9 @@ function setupExplorer() {
   }
   async function render(start) {
     start = Math.max(0, Math.floor(start));
+    // remember whether the user is currently parked at the bottom, so following
+    // only sticks to the newest digits when they haven't scrolled up to read.
+    const atBottom = grid.scrollHeight - grid.scrollTop - grid.clientHeight < 40;
     let resp;
     try { resp = await getJSON(`/api/digits?start=${start}&count=${count}`); }
     catch { resp = { digits: '', total: lastTotal, start }; }
@@ -309,8 +320,8 @@ function setupExplorer() {
     $('#digit-range').textContent = total
       ? `Stelle ${nf.format(curStart + 1)} bis ${nf.format(curStart + d.length)} von ${nf.format(total)}`
       : 'noch kein Datensatz da';
-    // in the live view, keep the newest digits in sight at the bottom
-    if (following && grid.classList.contains('expanded')) grid.scrollTop = grid.scrollHeight;
+    // in the live view, keep the newest digits in sight only if already at the bottom
+    if (following && grid.classList.contains('expanded') && atBottom) grid.scrollTop = grid.scrollHeight;
   }
   function stopFollow() { following = false; if (followTimer) clearInterval(followTimer); followTimer = null; $('#jump-follow').classList.remove('following'); }
   async function toLast() { const t = await currentTotal(); await render(Math.max(0, t - count)); }
@@ -321,6 +332,7 @@ function setupExplorer() {
       $('#jump-expand').textContent = '⤡ einklappen';
     }
     await toLast();
+    grid.scrollTop = grid.scrollHeight;        // engaging follow always starts at the newest
     followTimer = setInterval(async () => { const t = await currentTotal(); if (t !== lastTotal) await render(Math.max(0, t - count)); }, 2500);
   }
 

@@ -42,7 +42,7 @@ LOCAL_FALLBACK = PROJECT / "pi_100m.txt"         # optional local dataset for de
 
 REPO_URL = os.environ.get("REPO_URL", "https://github.com/ProfessorEngineergit/pi")
 # Digits every browser computes for the benchmark, so results are comparable.
-BENCH_DIGITS = int(os.environ.get("BENCH_DIGITS", "250000"))
+BENCH_DIGITS = int(os.environ.get("BENCH_DIGITS", "100000"))
 
 _lock = threading.Lock()
 
