@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>pi · die Kreiszahl, die nie aufhört</title>
+<meta name="description" content="Ein Server, der π endlos weiterrechnet, jede Stelle verifiziert und live zeigt, wo er gerade steht. Plus ein Browser-Benchmark mit Rangliste." />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+<link rel="stylesheet" href="/css/style.css" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90' fill='%2300f0ff'>π</text></svg>" />
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+<div class="scroll-progress" id="scroll-progress"></div>
+<div class="grain"></div>
+
+<!-- ───────── NAV ───────── -->
+<header class="nav glass">
+  <a href="#hero" class="brand"><span class="pi-mark">π</span> pi</a>
+  <nav class="nav-links">
+    <a href="#status">Live</a>
+    <a href="#explain">Wie's funktioniert</a>
+    <a href="#benchmark">Benchmark</a>
+    <a href="#walk">Random Walk</a>
+    <a href="#explorer">Stellen</a>
+    <a href="#code">Code</a>
+  </nav>
+  <a id="github-btn" class="btn btn-ghost" href="#" target="_blank" rel="noopener">
+    <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+    GitHub
+  </a>
+</header>
+
+<!-- ───────── HERO ───────── -->
+<section id="hero" class="hero">
+  <div class="hero-inner">
+    <div class="badge glass">Ein Server, der einfach nicht aufhört zu rechnen.</div>
+    <h1 class="hero-title"><span class="pi-glyph">π</span> hört<br>nie auf.</h1>
+    <p class="hero-sub">
+      π hat unendlich viele Nachkommastellen. Also rechnet dieser Server sie einfach
+      immer weiter aus, Tag und Nacht, und prüft jede einzelne nach. Hier siehst du in
+      Echtzeit, wie weit er schon ist.
+    </p>
+    <div class="hero-cta">
+      <a href="#status" class="btn btn-primary">Wo steht er gerade? ↓</a>
+      <a href="#benchmark" class="btn btn-ghost">Wie schnell ist dein Rechner?</a>
+    </div>
+    <div class="hero-stats" id="hero-stats">
+      <div class="hstat"><span class="hstat-num" data-count="0">0</span><span class="hstat-label">Stellen verifiziert</span></div>
+      <div class="hstat"><span class="hstat-num" data-count="0">0</span><span class="hstat-label">CPU-Kerne im Einsatz</span></div>
+      <div class="hstat"><span class="hstat-num hstat-static">∞</span><span class="hstat-label">und es geht weiter</span></div>
+    </div>
+  </div>
+  <div class="scroll-hint">runterscrollen ↓</div>
+</section>
+
+<!-- ───────── LIVE STATUS ───────── -->
+<section id="status" class="section">
+  <div class="section-head">
+    <span class="kicker"><span class="live-dot"></span> Live</span>
+    <h2>Wo steht er gerade?</h2>
+    <p class="lead">Der Server nimmt sich eine Stufe nach der anderen vor, immer mehr Stellen.
+      Du siehst, an welcher er gerade sitzt, wie weit er damit ist und welchen geprüften
+      Rekord er schon geschafft hat.</p>
+  </div>
+
+  <div class="status-grid">
+    <div class="card glass status-main">
+      <div class="status-state"><span class="pulse" id="st-pulse"></span><span id="st-state">verbinde…</span></div>
+      <div class="status-target"><span class="st-big" id="st-target">—</span><span class="st-sub">Stellen gerade in Arbeit</span></div>
+      <div class="status-phases" id="st-phases"></div>
+      <div class="status-progress">
+        <div class="status-bar"><div class="status-bar-fill" id="st-bar"></div></div>
+        <span id="st-progress-label" class="st-sub"></span>
+      </div>
+      <div class="status-metrics">
+        <div><span class="sm-num" id="st-elapsed">—</span><span class="sm-label">läuft seit</span></div>
+        <div><span class="sm-num" id="st-chunks">—</span><span class="sm-label">Päckchen fertig</span></div>
+        <div><span class="sm-num" id="st-cpu">—</span><span class="sm-label">rechnet auf</span></div>
+      </div>
+    </div>
+
+    <div class="card glass status-side">
+      <h3>Geprüfter Rekord</h3>
+      <div class="record-num" id="st-record">—</div>
+      <div class="record-sub st-sub" id="st-record-sub">noch keine Stufe fertig</div>
+      <h3 class="side-h">Referenz zum Abgleich</h3>
+      <div id="st-ref" class="st-ref">—</div>
+      <h3 class="side-h">Zuletzt geschafft</h3>
+      <div id="st-history" class="history"><span class="st-sub">—</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────── EXPLAIN ───────── -->
+<section id="explain" class="section">
+  <div class="section-head">
+    <span class="kicker">Hintergrund</span>
+    <h2>Wie das hier funktioniert</h2>
+    <p class="lead">Kurz erklärt, ganz ohne Mathe-Studium. Von „warum macht man sowas"
+      bis „woher weiß man, dass die Ziffern wirklich stimmen".</p>
+  </div>
+  <div class="explain-grid">
+    <div class="card glass explain-card">
+      <div class="ex-num">01</div><h3>Warum π endlos rechnen?</h3>
+      <p>Ehrlich gesagt: weil man's kann. Und weil π ein richtig guter Dauertest für
+        Rechner ist. Die Ziffern hören nie auf und wiederholen sich nie. Eine Aufgabe,
+        die nie langweilig wird und nie fertig ist.</p>
+    </div>
+    <div class="card glass explain-card">
+      <div class="ex-num">02</div><h3>Die Chudnovsky-Reihe</h3>
+      <p>Es gibt viele Formeln für π. Wir nehmen die schnellste bekannte: Jeder
+        Rechenschritt liefert gleich rund <strong>14 neue Stellen</strong>. Für eine Million
+        Stellen reichen so etwa 70.000 Schritte statt Millionen.</p>
+    </div>
+    <div class="card glass explain-card">
+      <div class="ex-num">03</div><h3>Binary Splitting</h3>
+      <p>Die Reihe stur von vorne nach hinten zu summieren wäre langsam. Stattdessen
+        kombinieren wir die Brüche paarweise zu einem ausgewogenen Baum. So bleiben die
+        riesigen Zahlen-Multiplikationen handlich und schnell.</p>
+    </div>
+    <div class="card glass explain-card">
+      <div class="ex-num">04</div><h3>Alle Kerne gleichzeitig</h3>
+      <p>Der Baum wird in Päckchen zerlegt, und jeder CPU-Kern bekommt seins. Auch das
+        Zusammenführen und die Umwandlung ins Dezimalsystem laufen parallel. Aus „ein Kern
+        rechnet" wird „die ganze Maschine rechnet".</p>
+    </div>
+    <div class="card glass explain-card">
+      <div class="ex-num">05</div><h3>Woher wir wissen, dass es stimmt</h3>
+      <p>Jede fertige Stufe wird Ziffer für Ziffer mit einer offiziellen Referenz
+        verglichen, die der Server selbst aus dem Internet lädt und per Prüfsumme
+        absichert. Erst wenn alles passt, zählt eine Stufe als Rekord.</p>
+    </div>
+    <div class="card glass explain-card">
+      <div class="ex-num">06</div><h3>Der Benchmark</h3>
+      <p>Denselben Rechenkern gibt's auch für dich: Dein Browser berechnet eine feste
+        Menge Stellen, wir stoppen die Zeit und setzen dich in die Rangliste. Gerechnet
+        wird dabei bei <em>dir</em>, nie auf dem Server.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ───────── BENCHMARK ───────── -->
+<section id="benchmark" class="section">
+  <div class="section-head">
+    <span class="kicker">Benchmark</span>
+    <h2>Wie schnell ist dein Rechner?</h2>
+    <p class="lead">Dein Browser rechnet <strong id="bench-digits">100.000</strong> Stellen
+      von π aus, direkt auf deinem Gerät. Auf dem Server läuft dabei nichts. Trag einen Namen
+      ein und schau, wo du gegen die anderen landest.</p>
+  </div>
+
+  <div class="bench-grid2">
+    <div class="card glass bench-run">
+      <div class="bench-form">
+        <input id="bench-name" type="text" placeholder="Dein Name (für die Rangliste)" maxlength="24" />
+        <button id="bench-go" class="btn btn-primary">▶ Benchmark starten</button>
+      </div>
+      <div class="compute-phases" id="bench-phases"></div>
+      <div class="bench-readout">
+        <div class="readout-item"><span class="readout-num" id="bench-time">—</span><span class="readout-label">deine Zeit</span></div>
+        <div class="readout-item"><span class="readout-num" id="bench-rank">—</span><span class="readout-label">dein Platz</span></div>
+        <div class="readout-item"><span class="readout-num" id="bench-score">—</span><span class="readout-label">Stellen/Sek.</span></div>
+      </div>
+      <div class="bench-specs" id="bench-specs"></div>
+    </div>
+
+    <div class="card glass bench-board">
+      <div class="board-head">
+        <h3>Rangliste aller Maschinen</h3>
+        <button id="board-refresh" class="btn btn-ghost btn-sm">aktualisieren</button>
+      </div>
+      <div id="leaderboard" class="leaderboard"><span class="st-sub">lädt…</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────── RANDOM WALK ───────── -->
+<section id="walk" class="section">
+  <div class="section-head">
+    <span class="kicker">Spielerei</span>
+    <h2>Der π Random Walk</h2>
+    <p class="lead">Eine schöne Art, π anzuschauen: Jede Ziffer (0–9) zeigt in eine
+      andere Richtung im Raum. Hängt man die Schritte aneinander, entsteht ein
+      einzigartiger Pfad durch die Stellen von π. Ziehen zum Drehen, scrollen zum Zoomen.</p>
+  </div>
+
+  <div class="walk-wrap card glass">
+    <canvas id="walk-canvas"></canvas>
+    <div class="walk-controls glass">
+      <label>Schritte: <strong id="walk-steps-val">8.000</strong></label>
+      <input id="walk-steps" type="range" min="500" max="40000" step="500" value="8000" />
+      <label>Start bei Stelle: <strong id="walk-start-val">0</strong></label>
+      <input id="walk-start" type="range" min="0" max="1000000" step="1000" value="0" />
+      <button id="walk-regen" class="btn btn-primary btn-sm">neu zeichnen</button>
+    </div>
+    <div class="walk-legend" id="walk-legend"></div>
+  </div>
+</section>
+
+<!-- ───────── EXPLORER ───────── -->
+<section id="explorer" class="section">
+  <div class="section-head">
+    <span class="kicker">Stöbern</span>
+    <h2>Alle Stellen ansehen</h2>
+    <p class="lead">Spring an jede Position, klapp die Ansicht auf, hüpf zur ersten oder
+      letzten Stelle. Im Live-Modus nimmt dich der Viewer ans wachsende Ende mit, und du
+      siehst unten zu, wie neue Stellen dazukommen. Und ja, du kannst deinen Geburtstag in π suchen.</p>
+  </div>
+
+  <div class="explorer-grid">
+    <div class="card glass search-card">
+      <h3>Eine Zahlenfolge in π finden</h3>
+      <div class="search-row">
+        <input id="search-input" type="text" inputmode="numeric" placeholder="z. B. 14021997" maxlength="32" />
+        <button id="search-btn" class="btn btn-primary">suchen</button>
+      </div>
+      <div class="quick-tags" id="quick-tags"></div>
+      <div id="search-result" class="search-result"></div>
+    </div>
+
+    <div class="card glass digit-card">
+      <div class="digit-toolbar">
+        <h3>Ziffern ab Position</h3>
+        <div class="jump-row">
+          <button class="btn btn-ghost btn-sm" id="jump-first" title="Zur ersten Stelle">⏮</button>
+          <button class="btn btn-ghost btn-sm" data-jump="-1" title="Seite zurück">◀</button>
+          <input id="jump-input" type="number" min="0" value="0" />
+          <button class="btn btn-ghost btn-sm" data-jump="1" title="Seite vor">▶</button>
+          <button class="btn btn-ghost btn-sm" id="jump-last" title="Zur letzten Stelle">⏭</button>
+          <button class="btn btn-ghost btn-sm" id="jump-rand" title="Zufall">⤳</button>
+          <button class="btn btn-ghost btn-sm" id="jump-follow" title="Dem wachsenden Ende live folgen">● Live</button>
+          <button class="btn btn-ghost btn-sm" id="jump-expand" title="Mehr Stellen anzeigen">⤢ aufklappen</button>
+        </div>
+      </div>
+      <div id="digit-grid" class="digit-grid"></div>
+      <div class="digit-foot">
+        <span id="digit-range"></span>
+        <span class="digit-palette" id="digit-palette"></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────── CODE ───────── -->
+<section id="code" class="section">
+  <div class="section-head">
+    <span class="kicker">Offen einsehbar</span>
+    <h2>Der ganze Rechenkern</h2>
+    <p class="lead">Kein Geheimnis. Das ist die komplette Engine, die hier rund um die Uhr
+      läuft, parallel über alle Kerne, jede Ziffer gegen eine Referenz geprüft.</p>
+  </div>
+
+  <div class="card glass code-card">
+    <div class="code-toolbar">
+      <span class="code-file">engine/pi.py</span>
+      <div class="code-actions">
+        <a id="code-github" class="btn btn-ghost btn-sm" href="#" target="_blank" rel="noopener">auf GitHub</a>
+        <button id="copy-code" class="btn btn-primary btn-sm">Code kopieren</button>
+      </div>
+    </div>
+    <pre class="code-pre"><code id="code-block" class="language-python">lädt…</code></pre>
+  </div>
+</section>
+
+<!-- ───────── FOOTER ───────── -->
+<footer class="footer">
+  <div class="footer-pi" id="footer-pi"></div>
+  <div class="footer-row">
+    <span><span class="pi-mark">π</span> pi</span>
+    <span id="footer-gmp">gmpy2 · GMP</span>
+    <a id="footer-github" href="#" target="_blank" rel="noopener">GitHub</a>
+  </div>
+  <p class="footer-note">Rechnet weiter, solange der Server läuft · Chudnovsky · Binary Splitting · parallel</p>
+</footer>
+
+<div id="toast" class="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+<script type="module" src="/js/app.js"></script>
+</body>
+</html>
