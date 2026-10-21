@@ -40,3 +40,7 @@ Visitors compute a fixed number of π digits **in their own browser** (BigInt,
 client-side, nothing on the server), the time is measured to the millisecond,
 and the result goes on the leaderboard. Each device keeps its own best result,
 so identical names never overwrite each other.
+
+## Development and AI assistance
+
+Small learning or experimental project developed with AI assistance. The default-branch history includes contributions explicitly attributed to Claude ([example](https://github.com/ProfessorEngineergit/pi/commit/c486d63301af376a4f56b2dc61858d0d7fb40afd)). This documents AI involvement in those contributions; it does not establish the origin of every line or independent validation. Existing author, co-author and session records are retained.
