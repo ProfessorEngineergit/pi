@@ -8,11 +8,11 @@ visitors can race their machines.
 It is deliberately lightweight (pure Python, almost no RAM), so it runs happily
 on a Raspberry Pi behind a Cloudflare tunnel.
 
-- **web/worker.py** — the streamer. A spigot algorithm emits π digit by digit
+- **web/worker.py** - the streamer. A spigot algorithm emits π digit by digit
   and throws old digits away, verifies each 1000-digit block against pi.delivery,
   and after a limit jumps back to digit 0 and counts the round.
-- **web/server.py** — FastAPI: live status, digit slices, search, source, leaderboard.
-- **web/static/** — the frontend (Three.js, no build step): live ticker,
+- **web/server.py** - FastAPI: live status, digit slices, search, source, leaderboard.
+- **web/static/** - the frontend (Three.js, no build step): live ticker,
   explorer, random walk, and the in-browser benchmark.
 
 ## Run it
@@ -41,6 +41,6 @@ client-side, nothing on the server), the time is measured to the millisecond,
 and the result goes on the leaderboard. Each device keeps its own best result,
 so identical names never overwrite each other.
 
-## Development and AI assistance
+## AI assistance
 
-Small learning or experimental project developed with AI assistance. The default-branch history includes contributions explicitly attributed to Claude ([example](https://github.com/ProfessorEngineergit/pi/commit/c486d63301af376a4f56b2dc61858d0d7fb40afd)). This documents AI involvement in those contributions; it does not establish the origin of every line or independent validation. Existing author, co-author and session records are retained.
+Some code contributions are explicitly attributed to AI tools: [generated with Claude Code](https://github.com/ProfessorEngineergit/pi/commit/92c8d8ca6459c81096fc3494b100f9c032d3b397). This applies to those contributions, not every file.
